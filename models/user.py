@@ -6,4 +6,5 @@ class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), nullable=True , unique=True)
     password = db.Column(db.String(10), nullable=True)
+    role = db.Column(db.String(80), nullable=True , default='user')
 

@@ -2,10 +2,9 @@ from flask import Flask , request , jsonify
 from models.user import User
 from database import db
 from flask_login import LoginManager , login_user, logout_user, login_required , current_user
-
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'you_secret_key'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:admin123@127.0.0.1:3306/flask-crud'
 
 login_manager = LoginManager()
 db.init_app(app)
@@ -42,14 +41,14 @@ def logout():
     return jsonify({'message': 'Logout realizado com sucesso'})
 
 @app.route('/user', methods=["POST"])
-@login_required
 def create_user():
     data = request.json
     username = data.get("username")
     password = data.get("password")
 
     if username and password:
-        user = User(username=username, password=password)
+
+        user = User(username=username, password=password, role='user')
         db.session.add(user)
         db.session.commit()
         return jsonify({'message' : f'Usuario: {username} foi cadastrado com sucesso'})
@@ -73,6 +72,9 @@ def update_user(id_user):
     new_password = data.get("password")
     user = User.query.get(id_user)
 
+    if id_user != current_user.id and current_user.role == 'user':
+        return jsonify({'message' : "Operação não permitida"}),403
+
     if user and new_password:
         user.password = new_password
         db.session.commit()
@@ -85,6 +87,8 @@ def update_user(id_user):
 def delete_user(id_user):
     user = User.query.get(id_user)
 
+    if current_user.role != 'admin':
+        return jsonify({'message' : "Operação não permitida"}),403
       #Não é pemitido deletar o usuario que esta autenticado
     if id_user == current_user.id:
         return jsonify({"message": f"{user.username}, não é permitdo deletar o mesmo usario autenticado"}), 403
